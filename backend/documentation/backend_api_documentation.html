@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BookWorm Backend — Architecture Documentation</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-soft: #1e293b;
+    --bg-card: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #f59e0b;
+    --accent-2: #8b5cf6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --sidebar-width: 280px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--bg-soft);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 22px 16px;
+    z-index: 50;
+  }
+  .sidebar .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 18px; font-weight: 700; margin-bottom: 22px;
+  }
+  .sidebar .brand .logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff;
+  }
+  .sidebar .toc-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text-muted); margin: 18px 0 8px;
+  }
+  .sidebar nav a {
+    display: block; padding: 8px 12px; border-radius: 8px;
+    color: var(--text); font-size: 14px; margin-bottom: 2px;
+    border-left: 3px solid transparent;
+  }
+  .sidebar nav a:hover { background: var(--bg); text-decoration: none; }
+  .sidebar nav a.active {
+    background: var(--bg);
+    border-left-color: var(--accent);
+    color: var(--accent);
+  }
+  .menu-toggle {
+    display: none; position: fixed; top: 14px; left: 14px; z-index: 60;
+    background: var(--accent); color: #0f172a; border: none;
+    border-radius: 8px; padding: 8px 12px; font-size: 18px; cursor: pointer;
+  }
+
+  /* ---------- Main content ---------- */
+  .main {
+    margin-left: var(--sidebar-width);
+    padding: 34px 44px 80px;
+    max-width: 1080px;
+  }
+  .main > section { margin-bottom: 28px; }
+  h1 { font-size: 34px; margin: 0 0 6px; }
+  h2 {
+    font-size: 24px; margin-top: 10px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    scroll-margin-top: 20px;
+  }
+  h2 .ic { font-size: 22px; }
+  h3 { font-size: 18px; margin: 22px 0 10px; color: var(--accent); }
+  p { color: var(--text); }
+  .muted { color: var(--text-muted); }
+  .lead { font-size: 17px; color: var(--text-muted); }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; margin: 2px 4px 2px 0;
+  }
+  .badge.green { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge.blue { background: rgba(59,130,246,.15); color: #60a5fa; }
+  .badge.purple { background: rgba(139,92,246,.15); color: #a78bfa; }
+  .badge.orange { background: rgba(245,158,11,.15); color: var(--accent); }
+  .badge.red { background: rgba(239,68,68,.15); color: #f87171; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin: 14px 0;
+  }
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  /* ---------- Collapsible ---------- */
+  details {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  details summary {
+    cursor: pointer; padding: 14px 18px; font-weight: 600;
+    list-style: none; display: flex; align-items: center; gap: 10px;
+    color: var(--text);
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary .chev { transition: transform .2s; color: var(--accent); }
+  details[open] summary .chev { transform: rotate(90deg); }
+  details .body { padding: 4px 18px 18px; }
+
+  /* ---------- Code / tree ---------- */
+  pre {
+    background: #0b1220; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px; overflow-x: auto;
+    font-size: 13.5px; line-height: 1.6;
+  }
+  code { font-family: "Cascadia Code", Consolas, "Courier New", monospace; }
+  pre .c { color: var(--green); }
+  pre .d { color: var(--text-muted); }
+  pre .f { color: #93c5fd; }
+  .tree { white-space: pre; }
+
+  /* ---------- Tables ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent); background: var(--bg-soft); }
+  tr:hover td { background: rgba(148,163,184,.06); }
+
+  /* ---------- Mermaid ---------- */
+  .mermaid-box {
+    background: #0b1220; border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; margin: 16px 0; overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+  .mermaid svg { max-width: 100%; height: auto; }
+
+  /* ---------- Tech icons ---------- */
+  .tech {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: 16px 8px; gap: 8px;
+  }
+  .tech-icon { width: 40px; height: 40px; object-fit: contain; }
+  .tfallback { font-size: 36px; line-height: 1; }
+  .tech .tname { font-weight: 600; font-size: 14px; }
+  .tech .tdesc { font-size: 12px; color: var(--text-muted); }
+
+  .endpoint {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 12px; border-radius: 8px; margin: 6px 0;
+    background: var(--bg); border: 1px solid var(--border);
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 13px;
+  }
+  .method {
+    min-width: 52px; text-align: center; font-weight: 700;
+    padding: 2px 6px; border-radius: 6px; font-size: 12px; color: #fff;
+  }
+  .m-get { background: var(--green); }
+  .m-post { background: var(--blue); }
+  .m-delete { background: var(--red); }
+  .ep-path { color: var(--text); }
+  .ep-auth { margin-left: auto; font-family: inherit; font-size: 12px; }
+  .ep-auth.pub { color: var(--accent); }
+  .ep-auth.pro { color: #a78bfa; }
+
+  footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); transition: transform .25s; }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 70px 18px 60px; }
+    .menu-toggle { display: block; }
+  }
+  @media (max-width: 480px) {
+    h1 { font-size: 26px; }
+    h2 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><span class="logo">📚</span> BookWorm Backend</div>
+  <div class="toc-label">Contents</div>
+  <nav id="toc">
+    <a href="#overview">1. Backend Overview</a>
+    <a href="#architecture">2. Architecture Diagram</a>
+    <a href="#request-flow">3. Request Flow</a>
+    <a href="#folder-structure">4. Folder Structure</a>
+    <a href="#technologies">5. Technologies</a>
+    <a href="#api-architecture">6. API Architecture</a>
+    <a href="#auth-flow">7. Authentication Flow</a>
+    <a href="#database">8. Database Layer</a>
+    <a href="#middleware">9. Middleware Pipeline</a>
+    <a href="#external">10. External Services</a>
+  </nav>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<div class="main">
+
+  <h1>📚 BookWorm — Backend Architecture</h1>
+  <p class="lead">Interactive technical documentation generated from the actual <code>/backend</code> source code.</p>
+  <div>
+    <span class="badge orange">Express 5</span>
+    <span class="badge green">Node.js</span>
+    <span class="badge blue">MongoDB Atlas</span>
+    <span class="badge purple">Mongoose 9</span>
+    <span class="badge red">JWT Auth</span>
+    <span class="badge blue">Cloudinary</span>
+  </div>
+
+  <!-- ================== 1. OVERVIEW ================== -->
+  <section id="overview">
+    <h2><span class="ic">🏠</span> 1. Backend Overview</h2>
+    <p>The BookWorm backend is a <strong>RESTful API server</strong> that powers a book-sharing / social app called <em>BookWorm</em>. It exposes authenticated endpoints for user registration, login, and CRUD operations on book posts (each post carries a title, caption, a 1–5 rating, and a cover image).</p>
+
+    <div class="grid cols-3">
+      <div class="card">
+        <h3>🎯 Main Purpose</h3>
+        <p class="muted">Serve as the central data &amp; business-logic layer: manage users, persist book recommendations, store cover images in the cloud, and secure all book operations behind JWT authentication.</p>
+      </div>
+      <div class="card">
+        <h3>🧱 Overall Architecture</h3>
+        <p class="muted">A <strong>layered, monolithic</strong> Express server following a classic <em>Routing → Middleware → Controller → (Service) → Model/Database</em> pattern, with an internal cron worker and external integrations (Cloudinary, DiceBear, MongoDB Atlas).</p>
+      </div>
+      <div class="card">
+        <h3>🔁 Data Flow Summary</h3>
+        <p class="muted">Client → Express Router → Auth Middleware → Controller → Mongoose Model → MongoDB Atlas. Cover images are uploaded to Cloudinary and referenced by URL; avatars are generated via the DiceBear API on registration.</p>
+      </div>
+    </div>
+
+    <h3>Key characteristics</h3>
+    <ul class="muted">
+      <li><strong>ES Modules</strong> — the package declares <code>"type": "module"</code>; the server runs from <code>src/server.js</code>.</li>
+      <li><strong>Security</strong> — passwords hashed with <code>bcryptjs</code> (10 salt rounds) via a Mongoose pre-save hook; routes protected by a JWT <code>protectRoute</code> middleware.</li>
+      <li><strong>Pagination</strong> — the books list endpoint supports <code>?page=&amp;limit=</code> for infinite-scroll loading.</li>
+      <li><strong>Uptime keeper</strong> — a <code>cron</code> job self-pings the API every 14 minutes to keep it warm on free hosting tiers.</li>
+    </ul>
+  </section>
+<!-- ================== 2. ARCHITECTURE DIAGRAM ================== -->
+  <section id="architecture">
+    <h2><span class="ic">🗺️</span> 2. Architecture Diagram</h2>
+    <p>High-level component diagram showing how the client, API server layers, database, and external services relate.</p>
+    <div class="mermaid-box"><pre class="mermaid">
+flowchart TB
+    subgraph Client["📱 Clients"]
+        C1["Mobile (Expo / React Native)"]
+        C2["HTTP Clients (fetch, curl, Postman)"]
+    end
+
+    subgraph Server["🌐 API Server (Express 5)"]
+        ENTRY["server.js<br/>(entry point)"]
+        MDL["Middleware<br/>express.json() · cors()"]
+        R1["/api/auth Router"]
+        R2["/api/books Router"]
+        AU["auth.middleware.js<br/>protectRoute (JWT)"]
+        AC["auth.controllers.js<br/>register · login"]
+        BC["books.controllers.js<br/>create · list · delete"]
+    end
+
+    subgraph Ext["🔌 External Services"]
+        CD["Cloudinary<br/>(image storage)"]
+        DB["MongoDB Atlas<br/>(bookworm_db)"]
+        AV["DiceBear API<br/>(avatar generator)"]
+        CRON["Cron Job<br/>(self-ping /14 min)"]
+    end
+
+    C1 --> ENTRY
+    C2 --> ENTRY
+    ENTRY --> MDL
+    MDL --> R1
+    MDL --> R2
+    R1 --> AC
+    R2 --> AU
+    AU --> BC
+    AC --> DB
+    BC --> DB
+    BC --> CD
+    AC --> AV
+    CRON --> ENTRY
+    DB -->|"read/write"| BC
+    CD -->|"upload / destroy"| BC
+    </pre></div>
+  </section>
+
+  <!-- ================== 3. REQUEST FLOW ================== -->
+  <section id="request-flow">
+    <h2><span class="ic">🔀</span> 3. Request Flow</h2>
+    <p>How a typical authenticated request (e.g. <code>POST /api/books</code>) travels through the backend:</p>
+    <div class="mermaid-box"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Cl as Client
+    participant Sr as Express Server
+    participant Mw as Middleware (json, cors)
+    participant Rt as /api/books Router
+    participant Au as protectRoute (JWT)
+    participant Co as Book Controller
+    participant Cd as Cloudinary
+    participant Db as MongoDB Atlas
+
+    Cl->>Sr: POST /api/books (Bearer token + body)
+    Sr->>Mw: parse JSON · enable CORS
+    Mw->>Rt: forward request
+    Rt->>Au: router.use(protectRoute)
+    Au->>Au: verify JWT · load user (User.findById)
+    Au-->>Au: attach req.user (401 if invalid)
+    Au->>Co: next() → controller
+    Co->>Cd: cloudinary.uploader.upload(image)
+    Cd-->>Co: secure_url (cover image)
+    Co->>Db: new Book({...}).save()
+    Db-->>Co: saved document
+    Co-->>Cl: 201 Created → JSON book
+    </pre></div>
+  </section>
+<!-- ================== 4. FOLDER STRUCTURE ================== -->
+  <section id="folder-structure">
+    <h2><span class="ic">📁</span> 4. Folder Structure</h2>
+    <p>Actual directory layout of <code>/backend</code>, with the purpose of each major path.</p>
+    <details open>
+      <summary><span class="chev">▶</span> Expand / collapse tree</summary>
+      <div class="body">
+<pre class="tree"><span class="f">backend/</span>
+├── <span class="f">.env</span> <span class="c">─────────────────────────── ENV vars (PORT, MONGODB_URI, JWT_SECRET, Cloudinary)</span>
+├── <span class="f">package.json</span> <span class="c">─────────────────── deps & scripts ("dev" = nodemon)</span>
+├── <span class="f">package-lock.json</span>
+└── <span class="f">src/</span> <span class="d">─────────────────────────── application source</span>
+    ├── <span class="f">server.js</span> <span class="d">────────────────── Express app · global middleware · mounts routers · boot</span>
+    ├── <span class="f">config/</span> <span class="d">────────────────────── setup & integrations</span>
+    │   ├── <span class="f">db.js</span> <span class="d">─────────────────────── MongoDB Atlas connection (connectDB)</span>
+    │   ├── <span class="f">cloudinary.js</span> <span class="d">─────────────── Cloudinary v2 client config</span>
+    │   └── <span class="f">cron.js</span> <span class="d">───────────────────── scheduled self-ping job (every 14 min)</span>
+    ├── <span class="f">models/</span> <span class="d">─────────────────────── Mongoose schemas / collections</span>
+    │   ├── <span class="f">User.js</span> <span class="d">─────────────────────── users (hashed password, avatar)</span>
+    │   └── <span class="f">Book.js</span> <span class="d">─────────────────────── book posts (ref → User)</span>
+    ├── <span class="f">controllers/</span> <span class="d">────────────────── request handlers / business logic</span>
+    │   ├── <span class="f">auth.controllers.js</span> <span class="d">────────── register + login (issues JWT)</span>
+    │   └── <span class="f">books.controllers.js</span> <span class="d">────────── create / paginate / recommend / delete</span>
+    ├── <span class="f">middleware/</span> <span class="d">───────────────────── auth guard</span>
+    │   └── <span class="f">auth.middleware.js</span> <span class="d">────────── protectRoute (JWT verify)</span>
+    └── <span class="f">routes/</span> <span class="d">───────────────────────── API route definitions</span>
+        ├── <span class="f">auth.routes.js</span> <span class="d">──────────────── /api/auth (register · login)</span>
+        └── <span class="f">book.routes.js</span> <span class="d">──────────────── /api/books (protected CRUD)</span>
+</pre>
+      </div>
+    </details>
+
+    <h3>Notable source details</h3>
+    <ul class="muted">
+      <li><code>server.js</code> is the single entry point — it starts the cron job, applies global middleware, mounts both routers, then connects the DB <em>before</em> <code>app.listen</code>.</li>
+      <li>The <code>config/</code> layer centralizes infrastructure: DB connection, Cloudinary client, and the cron scheduler.</li>
+      <li>Controllers talk directly to Mongoose models (a separate <em>service</em> layer is <strong>not</strong> used).</li>
+    </ul>
+  </section>
+
+  <!-- ================== 5. TECHNOLOGIES ================== -->
+  <section id="technologies">
+    <h2><span class="ic">🧰</span> 5. Technologies Used</h2>
+    <p>Detected directly from <code>package.json</code> and the source code. Icons via <em>Simple Icons</em> (CDN); emoji fallback where no brand icon exists.</p>
+    <div class="grid cols-3">
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/nodedotjs/5fa04e" alt="Node.js" /><span class="tname">Node.js</span><span class="tdesc">JavaScript runtime (ES Modules)</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/express/9ca3af" alt="Express" /><span class="tname">Express 5</span><span class="tdesc">Web framework &amp; router</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/mongodb/47a248" alt="MongoDB" /><span class="tname">MongoDB Atlas</span><span class="tdesc">Cloud NoSQL database</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/mongoose/880000" alt="Mongoose" /><span class="tname">Mongoose 9</span><span class="tdesc">ODM — schemas &amp; models</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/jsonwebtokens/d63aff" alt="JWT" /><span class="tname">JWT</span><span class="tdesc">Stateless auth tokens (15d)</span></div>
+      <div class="card tech"><span class="tfallback">🔒</span><span class="tname">bcryptjs</span><span class="tdesc">Password hashing (10 rounds)</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/cloudinary/5db7ff" alt="Cloudinary" /><span class="tname">Cloudinary</span><span class="tdesc">Image upload / storage</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/dotenv/ecd53f" alt="dotenv" /><span class="tname">dotenv</span><span class="tdesc">Environment variables</span></div>
+      <div class="card tech"><span class="tfallback">⏱️</span><span class="tname">node-cron</span><span class="tdesc">Scheduled self-ping job</span></div>
+      <div class="card tech"><span class="tfallback">🌐</span><span class="tname">cors</span><span class="tdesc">Cross-origin middleware</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/nodemon/76d04b" alt="nodemon" /><span class="tname">nodemon</span><span class="tdesc">Dev auto-restart (dev)</span></div>
+      <div class="card tech"><img class="tech-icon" src="https://cdn.simpleicons.org/javascript/f7df1e" alt="JavaScript" /><span class="tname">JavaScript</span><span class="tdesc">Language (no TypeScript)</span></div>
+    </div>
+  </section>
+<!-- ================== 6. API ARCHITECTURE ================== -->
+  <section id="api-architecture">
+    <h2><span class="ic">🔌</span> 6. API Architecture</h2>
+    <p>Endpoints are grouped into two routers under <code>/api</code>. The books router is fully protected by the auth middleware via <code>router.use(protectRoute)</code>.</p>
+
+    <h3>Route groups</h3>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>🔓 Auth — <code>/api/auth</code></h3>
+        <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/auth/register</span><span class="ep-auth pub">public</span></div>
+        <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/auth/login</span><span class="ep-auth pub">public</span></div>
+      </div>
+      <div class="card">
+        <h3>🔒 Books — <code>/api/books</code></h3>
+        <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/books</span><span class="ep-auth pro">JWT</span></div>
+        <div class="endpoint"><span class="method m-get">GET</span><span class="ep-path">/api/books?page=&amp;limit=</span><span class="ep-auth pro">JWT</span></div>
+        <div class="endpoint"><span class="method m-get">GET</span><span class="ep-path">/api/books (recommended)</span><span class="ep-auth pro">JWT</span></div>
+        <div class="endpoint"><span class="method m-delete">DEL</span><span class="ep-path">/api/books/:id</span><span class="ep-auth pro">JWT</span></div>
+      </div>
+    </div>
+
+    <h3>Controllers &amp; responsibilities</h3>
+    <table>
+      <thead><tr><th>Controller</th><th>Function</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><code>auth.controllers.js</code></td><td><code>registerAClient</code></td><td>Validate fields → check duplicates → generate DiceBear avatar → hash+saved user → issue JWT (201)</td></tr>
+        <tr><td><code>auth.controllers.js</code></td><td><code>loginAClient</code></td><td>Find by email → compare password → issue JWT (200)</td></tr>
+        <tr><td><code>books.controllers.js</code></td><td><code>postANewBook</code></td><td>Validate → upload image to Cloudinary → save Book → 201</td></tr>
+        <tr><td><code>books.controllers.js</code></td><td><code>getPaginatedBooks</code></td><td>Query with skip/limit, sort desc, populate user → paginated response</td></tr>
+        <tr><td><code>books.controllers.js</code></td><td><code>getRecommendedBooks</code></td><td>Fetch books created by <code>req.user</code> (see note below)</td></tr>
+        <tr><td><code>books.controllers.js</code></td><td><code>deleteABook</code></td><td>Ownership check → destroy Cloudinary image → remove doc → 200</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card">
+      <h3>⚠️ Route shadowing caveat</h3>
+      <p class="muted">In <code>book.routes.js</code> both <code>getPaginatedBooks</code> and <code>getRecommendedBooks</code> are registered on <code>GET /</code>. Express executes the <em>first</em> matching handler, so <code>getRecommendedBooks</code> is currently unreachable (shadowed). If intended, it should be mounted on a distinct path (e.g. <code>GET /recommended</code>).</p>
+    </div>
+  </section>
+
+  <!-- ================== 7. AUTH FLOW ================== -->
+  <section id="auth-flow">
+    <h2><span class="ic">🔐</span> 7. Authentication Flow</h2>
+    <p>How authentication works end-to-end: token issuance (register/login) and token verification on protected routes.</p>
+    <div class="mermaid-box"><pre class="mermaid">
+flowchart LR
+    subgraph Issue["Token Issuance"]
+        A["POST /api/auth/login<br/>(email + password)"]
+        B["User.findOne({email})"]
+        C{"comparePassword<br/>bcrypt compare"}
+        C -- "no" --> ERR["400 Invalid credentials"]
+        C -- "yes" --> D["generateToken(userId)<br/>jwt.sign · 15d expiry"]
+        D --> E["Return { token, user }"]
+    end
+
+    subgraph Verify["Token Verification (protected routes)"]
+        F["Request w/ header<br/>Authorization: Bearer &lt;token&gt;"]
+        G["protectRoute middleware"]
+        H["jwt.verify(token, JWT_SECRET)"]
+        I{"user found via<br/>User.findById(decoded.userId)"}
+        I -- "yes" --> J["req.user = user → next()"]
+        I -- "no / error" --> K["401 Token is not valid"]
+    end
+
+    E -->|"client stores &amp; sends token"| F
+    J --> L["Controller executes"]
+    </pre></div>
+  </section>
+<!-- ================== 8. DATABASE LAYER ================== -->
+  <section id="database">
+    <h2><span class="ic">🗄️</span> 8. Database Layer</h2>
+    <p>MongoDB Atlas database <code>bookworm_db</code> contains two collections. The Book collection holds an <code>ObjectId</code> reference to a User (one user → many books).</p>
+    <div class="mermaid-box"><pre class="mermaid">
+erDiagram
+    USER ||--o{ BOOK : "owns (ref: user)"
+    USER {
+        ObjectId _id PK
+        string username "unique"
+        string email "unique"
+        string password "hashed"
+        string profileImage "DiceBear URL"
+        date createdAt "timestamps"
+        date updatedAt "timestamps"
+    }
+    BOOK {
+        ObjectId _id PK
+        string title "required"
+        string caption "required"
+        string image "Cloudinary URL"
+        number rating "1..5"
+        ObjectId user FK "ref: User"
+        date createdAt "timestamps"
+        date updatedAt "timestamps"
+    }
+    </pre></div>
+
+    <h3>Collection / assignment summary</h3>
+    <table>
+      <thead><tr><th>Collection</th><th>Key fields</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>users</code></td><td>username, email, password, profileImage</td><td>Unique username + email; password auto-hashed in <code>pre("save")</code> hook</td></tr>
+        <tr><td><code>books</code></td><td>title, caption, image, rating (1–5), user</td><td>Populated with user's <code>username</code> &amp; <code>profileImage</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Data flow</h3>
+    <ul class="muted">
+      <li><strong>Write (books):</strong> Controller → upload cover to Cloudinary → build Book doc → <code>save()</code> → MongoDB.</li>
+      <li><strong>Read (books):</strong> Controller → <code>Book.find().sort().skip().limit().populate("user")</code> → JSON payload with pagination metadata.</li>
+      <li><strong>Write (users):</strong> Register controller → Mongoose pre-save hashes password → insert with profile image from DiceBear.</li>
+    </ul>
+  </section>
+
+  <!-- ================== 9. MIDDLEWARE PIPELINE ================== -->
+  <section id="middleware">
+    <h2><span class="ic">🧱</span> 9. Middleware Pipeline</h2>
+    <p>The execution order reconstructed exactly from <code>server.js</code> and <code>book.routes.js</code>: global middleware runs first, then per-router auth guards for the books group. Note there is <strong>no</strong> global error handler and <strong>no</strong> Helmet/body-parser beyond <code>express.json()</code>.</p>
+    <div class="mermaid-box"><pre class="mermaid">
+flowchart TD
+    REQ["1 · Incoming Request"] --> CRON["Cron Job<br/>(started at boot, 14-min self-ping)"]
+    CRON --> J["2 · app.use(express.json())<br/>parse JSON body"]
+    J --> CORS["3 · app.use(cors())<br/>enable cross-origin"]
+    CORS --> M["4 · Router mount"]
+
+    M -->|"/api/auth"| RA["auth.routes.js<br/>(no extra middleware)"]
+    M -->|"/api/books"| RB["book.routes.js → router.use(protectRoute)"]
+
+    RA --> CA["Auth Controllers"]
+    RB --> AUTH["5 · protectRoute<br/>verify JWT + load user"]
+    AUTH --> CB["Book Controllers"]
+
+    CB --> DB["6 · Mongoose → MongoDB Atlas"]
+    CA --> DB
+    CB --> CL["Cloudinary"]
+
+    DB --> RESP["7 · JSON Response (no global error handler)"]
+    CL --> RESP
+    </pre></div>
+
+    <h3>Middleware inventory</h3>
+    <table>
+      <thead><tr><th>Middleware</th><th>Scope</th><th>Function</th></tr></thead>
+      <tbody>
+        <tr><td><code>express.json()</code></td><td>Global (app)</td><td>Parse incoming JSON request bodies</td></tr>
+        <tr><td><code>cors()</code></td><td>Global (app)</td><td>Allow cross-origin requests from any origin</td></tr>
+        <tr><td><code>protectRoute</code></td><td>/api/books (router)</td><td>Verify Bearer JWT, load user, attach <code>req.user</code>; 401 on failure</td></tr>
+        <tr><td>Error handling</td><td>—</td><td>⚠️ No dedicated error-handling middleware; each controller wraps logic in its own try/catch</td></tr>
+      </tbody>
+    </table>
+  </section>
+<!-- ================== 10. EXTERNAL SERVICES ================== -->
+  <section id="external">
+    <h2><span class="ic">🌐</span> 10. External Services</h2>
+    <p>The backend integrates with four external services — three in request paths plus one background job.</p>
+    <div class="mermaid-box"><pre class="mermaid">
+flowchart LR
+    S["BookWorm Backend"]
+    S -->|"config/cloudinary.js"| C["☁️ Cloudinary<br/>cover image upload · destroy"]
+    S -->|"config/db.js · mongoose.connect"| M["🗄️ MongoDB Atlas<br/>bookworm_db"]
+    S -->|"register controller"| D["👤 DiceBear API<br/>random avatar (SVG)"]
+    S -->|"config/cron.js · every 14 min"| H["🛰️ Self-Ping GET<br/>keep-alive uptime (API_URL)"]
+    </pre></div>
+
+    <h3>Integration details</h3>
+    <table>
+      <thead><tr><th>Service</th><th>Used for</th><th>Endpoint / usage</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Cloudinary</strong></td><td>Storing &amp; deleting book cover images</td><td><code>uploader.upload()</code> → per-user folder <code>bookworm/&lt;userId&gt;/covers</code>; <code>uploader.destroy()</code> on delete</td></tr>
+        <tr><td><strong>MongoDB Atlas</strong></td><td>Primary data store</td><td><code>mongoose.connect(MONGODB_CONN_URI)</code> to <code>bookworm_db</code></td></tr>
+        <tr><td><strong>DiceBear API</strong></td><td>Generating profile avatars on registration</td><td><code>https://api.dicebear.com/10.x/toon-head/svg?seed=&lt;username&gt;</code></td></tr>
+        <tr><td><strong>Self-ping (cron)</strong></td><td>Keep the server warm on free hosting</td><td><code>https.get(process.env.API_URL)</code> every 14 min</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">💡 Note: the cron job reads <code>process.env.API_URL</code>, which is not currently present in <code>.env</code> — it will need to be defined for the self-ping to succeed.</p>
+  </section>
+
+  <footer>
+    <p>Generated from the actual <code>/backend</code> source. Stack: Express 5 · Mongoose 9 · MongoDB Atlas · Cloudinary · JWT · bcryptjs · node-cron. No TypeScript, no service layer, no global error handler.</p>
+  </footer>
+</div>
+
+<script>
+  // ---------- Sidebar (mobile) toggle ----------
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("open");
+  }
+  document.querySelectorAll(".sidebar nav a").forEach(a => {
+    a.addEventListener("click", () => document.getElementById("sidebar").classList.remove("open"));
+  });
+
+  // ---------- Active link on scroll (sticky TOC) ----------
+  const links = Array.from(document.querySelectorAll("#toc a"));
+  const sections = {};
+  links.forEach(l => { sections[l.getAttribute("href").slice(1)] = l; });
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove("active"));
+        const link = sections[entry.target.id];
+        if (link) link.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-20% 0px -70% 0px" });
+
+  Object.keys(sections).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+
+  // ---------- Mermaid init ----------
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "dark",
+    securityLevel: "loose",
+    themeVariables: {
+      primaryColor: "#1e293b",
+      primaryTextColor: "#e2e8f0",
+      primaryBorderColor: "#334155",
+      lineColor: "#f59e0b",
+      secondaryColor: "#0f172a",
+      tertiaryColor: "#1e293b",
+      fontSize: "14px"
+    },
+    flowchart: { curve: "basis" }
+  });
+</script>
+</body>
+</html>
