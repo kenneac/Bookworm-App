@@ -14,8 +14,10 @@ import COLORS from "@/constants/colors";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
+import { useCustomAlertModal } from "@/hooks/useCustomAlertModal";
 
 export default function Signup() {
+  const {showAlert, AlertModal} = useCustomAlertModal();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,8 +30,14 @@ export default function Signup() {
   const handleSignUp = async () => {
     const result = await register(username, email, password);
 
-    if (!result.success) Alert.alert("Error", result.error);
+    if (!result.success) showAlert({
+      title: "Signup Failed",
+      message: result.error,
+    });
   };
+
+  console.log("user::: ", user);
+  console.log("token::: ", token);
 
   return (
     <KeyboardAvoidingView
@@ -138,6 +146,9 @@ export default function Signup() {
           </View>
         </View>
       </View>
+
+      {/* Custom Alert Modal */}
+      {AlertModal}
     </KeyboardAvoidingView>
   );
 }

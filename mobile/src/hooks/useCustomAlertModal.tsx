@@ -145,8 +145,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 24,
     borderRadius: 10,
     alignItems: "center",
   },
