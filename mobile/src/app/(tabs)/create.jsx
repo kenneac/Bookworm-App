@@ -16,9 +16,10 @@ import styles from "@/assets/styles/create.styles";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "@/constants/colors";
 import { useAuthStore } from "@/store/authStore";
+import { useCustomAlertModal } from "@/hooks/useCustomAlertModal";
 
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+import { File } from "expo-file-system";
 import { API_URL } from "@/constants/api";
 
 export default function Create() {
@@ -27,12 +28,13 @@ export default function Create() {
   const [rating, setRating] = useState(3);
   const [image, setImage] = useState(null); // to display the selected image
   const [imageBase64, setImageBase64] = useState(null);
+  const [imageMimeType,setImageMimeType] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
   const { token } = useAuthStore();
 
-  console.log(token);
+  const { showAlert, AlertModal } = useCustomAlertModal();
 
   const pickImage = async () => {
     try {
@@ -42,10 +44,11 @@ export default function Create() {
           await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (status !== "granted") {
-          Alert.alert(
-            "Permission Denied",
-            "We need camera roll permissions to upload an image",
-          );
+          showAlert({
+            title: "Permission Denied",
+            message: "We need camera roll permissions to upload an image",
+            alertType: "error",
+          });
           return;
         }
       }
@@ -53,34 +56,34 @@ export default function Create() {
       // launch image library
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: "images",
-        allowsEditing: true,
-        aspect: [4, 3],
+        // allowsEditing: true,
+        // aspect: [9, 16],
         quality: 0.5, // lower quality for smaller base64
         base64: true,
       });
 
+      // if user doesn't cancel selection
       if (!result.canceled) {
-        setImage(result.assets[0].uri);
+        const asset = result.assets[0];
+        setImage(asset.uri);
+        setImageMimeType(asset.mimeType.toLowerCase() ?? "image/jpeg");
 
         // if base64 is provided, use it
-
-        if (result.assets[0].base64) {
-          setImageBase64(result.assets[0].base64);
+        if (asset.base64) {
+          setImageBase64(asset.base64);
         } else {
           // otherwise, convert to base64
-          const base64 = await FileSystem.readAsStringAsync(
-            result.assets[0].uri,
-            {
-              encoding: FileSystem.EncodingType.Base64,
-            },
-          );
-
+          const file = new File(asset.uri);
+          const base64 = await file.base64();
           setImageBase64(base64);
         }
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "There was a problem selecting your image");
+      showAlert({
+        title: "Error",
+        message: "There was a problem selecting your image",
+      });
     }
   };
 
@@ -93,14 +96,19 @@ export default function Create() {
     try {
       setLoading(true);
 
-      // get file extension from URI or default to jpeg
-      const uriParts = image.split(".");
-      const fileType = uriParts[uriParts.length - 1];
-      const imageType = fileType
-        ? `image/${fileType.toLowerCase()}`
-        : "image/jpeg";
+      // // get file extension from URI or default to jpeg
+      // const uriParts = image.split(".");
+      // const fileType = uriParts[uriParts.length - 1];
+      // const imageType = fileType
+      //   ? `image/${fileType.toLowerCase()}`
+      //   : "image/jpeg";
 
-      const imageDataUrl = `data:${imageType};base64,${imageBase64}`;
+      const imageDataUrl = `data:${imageMimeType};base64,${imageBase64}`;
+
+      console.log("imageMimeType", imageMimeType)
+      console.log("imageBase64 length:", imageBase64?.length);
+      console.log("imageDataUrl preview:", imageDataUrl.slice(0, 60));
+      //return;
 
       const response = await fetch(`${API_URL}/books`, {
         method: "POST",
@@ -119,7 +127,11 @@ export default function Create() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Something went wrong");
 
-      Alert.alert("Success", "Your book recommendation has been posted!");
+      showAlert({
+        title: "Success",
+        alertType: "success",
+        message: "Your book recommendation has been posted!",
+      });
       setTitle("");
       setCaption("");
       setRating(3);
@@ -128,7 +140,10 @@ export default function Create() {
       router.push("/");
     } catch (error) {
       console.error("Error creating post:", error);
-      Alert.alert("Error", error.message || "Something went wrong");
+      Alert.alert(
+        "Error creating post",
+        error.message || "Something went wrong",
+      );
     } finally {
       setLoading(false);
     }
@@ -204,7 +219,11 @@ export default function Create() {
               <Text style={styles.label}>Book Image</Text>
               <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
                 {image ? (
-                  <Image source={{ uri: image }} style={styles.previewImage} />
+                  <Image
+                    source={{ uri: image }}
+                    style={styles.previewImage}
+                    resizeMode="contain"
+                  />
                 ) : (
                   <View style={styles.placeholderContainer}>
                     <Ionicons

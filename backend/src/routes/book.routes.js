@@ -15,7 +15,7 @@ router.use(protectRoute);
 //routes
 router.post("/", postANewBook);
 router.get("/", getPaginatedBooks);
-router.get("/", getRecommendedBooks);
+router.get("/user", getRecommendedBooks);
 router.delete("/:id", deleteABook);
 
 export default router;

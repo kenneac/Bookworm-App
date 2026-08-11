@@ -23,7 +23,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { user, isLoading, register, token } = useAuthStore();
+  const {isLoading, register } = useAuthStore();
 
   const router = useRouter();
 
@@ -35,9 +35,6 @@ export default function Signup() {
       message: result.error,
     });
   };
-
-  console.log("user::: ", user);
-  console.log("token::: ", token);
 
   return (
     <KeyboardAvoidingView

@@ -1,18 +1,22 @@
 import cloudinary from "../config/cloudinary.js";
 import Book from "../models/Book.js";
+import "dotenv/config";
 
 export async function postANewBook(req, res) {
   try {
     const { title, caption, rating, image } = req.body;
-
+   
     if (!image || !title || !caption || !rating) {
       return res.status(400).json({ message: "Please provide all fields" });
     }
 
     // upload the image to cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(image,{
-      folder: `bookworm/${req.user._id}/covers`,  //create a special folder for each user
+    const uploadResponse = await cloudinary.uploader.upload(image, {
+      folder: `bookworm/${req.user._id}/covers`, //create a special folder for each user
     });
+
+    console.log("Cloudinary upload:", uploadResponse);
+
     const imageUrl = uploadResponse.secure_url;
 
     // save to the database
@@ -29,7 +33,12 @@ export async function postANewBook(req, res) {
     res.status(201).json(newBook);
   } catch (error) {
     console.log("Error creating book", error);
-    res.status(500).json({ message: error.message });
+    res
+      .status(500)
+      .json({
+        message: error.message,
+        errorLocation: "controllers/books.controllers.js - postANewBook",
+      });
   }
 }
 

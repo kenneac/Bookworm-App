@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 // MIDDLEWARE
 job.start();
-app.use(express.json());
+app.use(express.json({limit: "5mb"}));
 app.use(
   cors({
     origin: "http://localhost:8081",//just for testin my frontend

@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   imagePicker: {
     width: "100%",
-    height: 200,
+    height: 400,
     backgroundColor: COLORS.inputBackground,
     borderRadius: 12,
     borderWidth: 1,
