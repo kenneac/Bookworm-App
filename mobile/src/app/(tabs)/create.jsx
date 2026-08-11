@@ -34,6 +34,8 @@ export default function Create() {
   const router = useRouter();
   const { token } = useAuthStore();
 
+   console.log("token:::", token)
+
   const { showAlert, AlertModal } = useCustomAlertModal();
 
   const pickImage = async () => {
@@ -96,19 +98,7 @@ export default function Create() {
     try {
       setLoading(true);
 
-      // // get file extension from URI or default to jpeg
-      // const uriParts = image.split(".");
-      // const fileType = uriParts[uriParts.length - 1];
-      // const imageType = fileType
-      //   ? `image/${fileType.toLowerCase()}`
-      //   : "image/jpeg";
-
       const imageDataUrl = `data:${imageMimeType};base64,${imageBase64}`;
-
-      console.log("imageMimeType", imageMimeType)
-      console.log("imageBase64 length:", imageBase64?.length);
-      console.log("imageDataUrl preview:", imageDataUrl.slice(0, 60));
-      //return;
 
       const response = await fetch(`${API_URL}/books`, {
         method: "POST",
