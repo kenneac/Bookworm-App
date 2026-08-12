@@ -40,9 +40,6 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to fetch books");
 
-      // todo fix it later
-      // setBooks((prevBooks) => [...prevBooks, ...data.books]);
-
       const uniqueBooks =
         refresh || pageNum === 1
           ? data.books
@@ -58,7 +55,7 @@ export default function Home() {
       console.log("Error fetching books", error);
     } finally {
       if (refresh) {
-        await sleep(800);
+        await sleep(500);
         setRefreshing(false);
       } else setLoading(false);
     }
