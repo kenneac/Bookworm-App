@@ -8,10 +8,12 @@
     "scheme": "bookworm",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.kenneacsteam.bookworm"
     },
     "android": {
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kenneacsteam.bookworm"
     },
     "web": {
       "output": "static",
@@ -31,6 +33,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3ff68ad1-8627-4606-bcda-9e77b9e664e2"
+      }
+    },
+    "owner": "kenneacs-team"
   }
 }
