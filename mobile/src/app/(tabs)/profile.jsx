@@ -19,12 +19,14 @@ import COLORS from "@/constants/colors";
 import { Image } from "expo-image";
 import { sleep } from ".";
 import Loader from "@/components/Loader";
+import { useCustomAlertModal } from "@/hooks/useCustomAlertModal";
 
 export default function Profile() {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteBookId, setDeleteBookId] = useState(null);
+  const { showAlert, AlertModal } = useCustomAlertModal();
 
   const { token } = useAuthStore();
 
@@ -39,12 +41,16 @@ export default function Profile() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to fetch user books");
+      if (!response.ok)
+        throw new Error(data.message || "Failed to fetch user books");
 
       setBooks(data);
     } catch (error) {
       console.error("Error fetching data:", error);
-      Alert.alert("Error", "Failed to load profile data. Pull down to refresh.");
+      Alert.alert(
+        "Error",
+        "Failed to load profile data. Pull down to refresh.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -64,22 +70,40 @@ export default function Profile() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to delete book");
+      if (!response.ok)
+        throw new Error(data.message || "Failed to delete book");
 
       setBooks(books.filter((book) => book._id !== bookId));
-      Alert.alert("Success", "Recommendation deleted successfully");
+      showAlert({
+        title: "Success",
+        alertType: "success",
+        message: "Recommendation deleted successfully",
+      });
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to delete recommendation");
+      showAlert({
+        title: "Error",
+        alertType: "error",
+        message: "Failed to delete recommendation",
+      });
     } finally {
       setDeleteBookId(null);
     }
   };
 
   const confirmDelete = (bookId) => {
-    Alert.alert("Delete Recommendation", "Are you sure you want to delete this recommendation?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => handleDeleteBook(bookId) },
-    ]);
+    showAlert({
+      title: "Delete Recommendation",
+      alertType: "warning",
+      message: "Are you sure you want to delete this recommendation?",
+      buttons: [
+        { text: "No", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => handleDeleteBook(bookId),
+        },
+      ],
+    });
   };
 
   const renderBookItem = ({ item }) => (
@@ -87,14 +111,21 @@ export default function Profile() {
       <Image source={item.image} style={styles.bookImage} />
       <View style={styles.bookInfo}>
         <Text style={styles.bookTitle}>{item.title}</Text>
-        <View style={styles.ratingContainer}>{renderRatingStars(item.rating)}</View>
+        <View style={styles.ratingContainer}>
+          {renderRatingStars(item.rating)}
+        </View>
         <Text style={styles.bookCaption} numberOfLines={2}>
           {item.caption}
         </Text>
-        <Text style={styles.bookDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+        <Text style={styles.bookDate}>
+          {new Date(item.createdAt).toLocaleDateString()}
+        </Text>
       </View>
 
-      <TouchableOpacity style={styles.deleteButton} onPress={() => confirmDelete(item._id)}>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => confirmDelete(item._id)}
+      >
         {deleteBookId === item._id ? (
           <ActivityIndicator size="small" color={COLORS.primary} />
         ) : (
@@ -114,7 +145,7 @@ export default function Profile() {
           size={14}
           color={i <= rating ? "#f4b400" : COLORS.textSecondary}
           style={{ marginRight: 2 }}
-        />
+        />,
       );
     }
     return stars;
@@ -156,14 +187,22 @@ export default function Profile() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="book-outline" size={50} color={COLORS.textSecondary} />
+            <Ionicons
+              name="book-outline"
+              size={50}
+              color={COLORS.textSecondary}
+            />
             <Text style={styles.emptyText}>No recommendations yet</Text>
-            <TouchableOpacity style={styles.addButton} onPress={() => router.push("/create")}>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => router.push("/create")}
+            >
               <Text style={styles.addButtonText}>Add Your First Book</Text>
             </TouchableOpacity>
           </View>
         }
       />
+      {AlertModal}
     </View>
   );
 }
