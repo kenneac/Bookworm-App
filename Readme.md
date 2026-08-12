@@ -1,37 +1,22 @@
-/(backend)
-1. >npm init -y
-2. Command: > npm i express mongoose dotenv jsonwebtoken cloudinary bcryptjs cors
-express – a minimal web framework for building your Node.js server and defining API routes.
-mongoose – an ODM (Object Data Modeling) library that lets you interact with MongoDB using JavaScript objects/schemas instead of raw queries.
-dotenv – loads environment variables from a .env file into process.env so you can keep secrets/config out of your code.
-jsonwebtoken – creates and verifies JWTs (JSON Web Tokens) for authentication/authorization.
-cloudinary – SDK for uploading, storing, and transforming images/media on the Cloudinary cloud service.
-bcryptjs – hashes and compares passwords securely so you never store plain-text passwords.
-cors – middleware that enables Cross-Origin Resource Sharing so your frontend (on a different origin/port) can call your backend API.
-3. > npm i nodemon -D
-a development package for monitoring files.
-4. create server.js 
-5. modify package.json  to add: "type": "module",
-6.  add .gitignore, Readme.md, then connect to github
-------------------------
-1. create a project in https://www.mongodb.com/products/platform/atlas-database
-- set up a cluster
--  get the MONGODB_ username, password, and uri (at the first instance, else it may no longer be available)
-- choose a connection method
-- add the database name: MONGO_URI=mongodb+srv://meetkenn2diol_db_user:c2IT33FU06FPCdk0@bookwormcluster.lsyaiqm.mongodb.net/bookworm_db?appName=bookwormcluster
-- update the network access
-
-2. configure your backend to connect to mongoDB
-
-3. create mongodb schema for a  user
-- https://www.dicebear.com to get avatars for profile image
-- use bycrypt for hashing the 
-- run > openssl rand -base64 32   --- with git bash terminal to generate a random
-
-4. create the mongodb model for a user
-5. create the schema and model for books
-- implement pagination for infinite scrolling
-6. set up cloudinary https://cloudinary.com
-7. create the project and folders you need in cloudinary
-8. connect cloudinary to your backend
-9. run > npm i cron   --- to run cron jobs
+/(mobile)
+1. > npx create-expo-app@latest .
+2. run > npx expo install expo-image    
+this uses expo image components with more refined image features
+3. > npx expo install expo-image-picker expo-file-system
+expo-image-picker lets the user pick/take a photo
+expo-file-system is handy if you need to read the picked image as base64 or manage local file URIs before uploading
+4. https://storyset.com to get free illustrated images
+5. https://www.jetbrains.com/lp/mono/  to download fonts
+6. Use KeyboardAvoidingView from react-native to ensure sensitivity to keyboard
+7. > npx expo install @expo/vector-icons
+8. > npm install zustand
+https://zustand.docs.pmnd.rs/learn/getting-started/introduction
+ It's a small, lightweight state management.
+9. > npx expo install @react-native-async-storage/async-storage
+10. Create the authStore.js  --- uses FETCH & AWAIT
+11. app/_layout.tsx should use useSegment(), to check auth anytime the tab changes
+12. app/_layout.tsx add navigation check
+13. (tab)/create... Using base64 to transform an image into text
+14. run > npx expo install expo-image-picker expo-file-system
+image picker      for grabbing image
+expo-file-system     reading/writing/moving files in the app's own sandboxed storage (cache/document directories) 
