@@ -51,6 +51,7 @@ coverage/
 dist/
 web-build/
 *.expo-source/
+expo-env.d.ts
 
 # Native build outputs & bundles (EAS / Local builds)
 *.apk
@@ -63,6 +64,7 @@ android/app/build/
 android/.gradle/
 android/app/gradle/
 android/local.properties
+.kotlin/
 
 # iOS prebuild / native build files
 ios/Pods/
@@ -73,12 +75,16 @@ ios/DerivedData/
 
 # Keys & Certificates
 *.jks
+*.p8
 *.p12
 *.keystore
 *.mobileprovision
 
 # Metro bundler cache
 .metro-health-check*
+
+# Merge artifacts
+*.orig.*
 
 # ==========================================
 # Operating System & Editor Files
