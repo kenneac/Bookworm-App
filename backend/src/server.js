@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // MIDDLEWARE
-job.start();
+//job.start();
 app.use(express.json({limit: "5mb"}));
 app.use(
   cors({
